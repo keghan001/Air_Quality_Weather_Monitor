@@ -40,8 +40,8 @@ int uvPin = 4;   // select the input for the UV sensor pin A1 on UNO
 // 7. RTC declarations
 #include "RTClib.h"
 RTC_DS1307 rtc;
-String stamp;
-const char* timeStamp;
+String timeStamp;
+
 
 
 //Handling the readings results
@@ -117,8 +117,7 @@ void setup(){
 void loop(){
 
   //Reads the timestamp from the function and converts to const char
-  stamp = dataTime();
-  timeStamp = stamp.c_str();
+  timeStamp = dataTime();
 
   //Temperature and humidity readings
   temp = bmp.readTemperature(); // Takes readings in Celcius (C)
@@ -148,7 +147,7 @@ void loop(){
 
 
   //Converting sensor values from the array->String->Const char 
-  sensorStrVals= stamp + valToString(valuesArray);
+  sensorStrVals= timeStamp + valToString(valuesArray);
   sensorCharV = sensorStrVals.c_str();
   
   Serial.println(sensorStrVals);
