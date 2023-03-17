@@ -106,7 +106,7 @@ void setup(){
     initGasSensor(); // Gas sensor initializer
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
-    initMsg();
+    endMsg();
     alert(alertPin, 5, 400);
 
     lcd.clear();
