@@ -1,6 +1,6 @@
 //General declarations
 #include <Wire.h>
-//#include "WiFi.h"
+//
 
 //1. Temperature, Humidity Sensor declaration
 #include "DHT.h"
@@ -24,17 +24,17 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 //5. MQ-135 Sensor declarations
 #include <MQUnifiedsensor.h>
-#define placa "ESP32"
-#define Voltage_Resolution 5
-#define pin 2 //Analog input A0 on arduino UNO
-#define type "MQ-135" //MQ135
-#define ADC_Bit_Resolution 10 // For arduino UNO/MEGA/NANO
+#define placa "ESP-32"
+#define Voltage_Resolution 3.3 // 3V3 <- IMPORTANT
+#define gasPin 35 //Analog input A2 of your arduino
+#define gasType "MQ-135" //MQ135
+#define ADC_Bit_Resolution 12 // ESP-32 bit resolution
 #define RatioMQ135CleanAir 3.6//RS / R0 = 3.6 ppm  
 //Declare Sensor
-MQUnifiedsensor MQ135(placa, Voltage_Resolution, ADC_Bit_Resolution, pin, type);
+MQUnifiedsensor MQ135(placa, Voltage_Resolution, ADC_Bit_Resolution, gasPin, gasType);
 
 // 6. UV Sensor declarations using an analog pin
-int uvPin = 4;   // select the input for the UV sensor pin A1 on UNO
+int uvPin = 34;   // select the input for the UV sensor pin A3 on UNO
 
 
 // 7. RTC declarations
@@ -42,6 +42,13 @@ int uvPin = 4;   // select the input for the UV sensor pin A1 on UNO
 RTC_DS1307 rtc;
 String timeStamp;
 
+
+//8. WiFi declarations
+#include "WiFi.h"
+#include "secrets.h"
+const char* ssid = SECRET_SSID;     //  your network SSID (name)
+const char* pass = SECRET_PASS;  // your network password
+int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 
 //Handling the readings results
@@ -106,6 +113,7 @@ void setup(){
     initGasSensor(); // Gas sensor initializer
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
+    initWireless(); //Initializes the Wifi
     endMsg();
     alert(alertPin, 5, 400);
 
@@ -157,6 +165,46 @@ void loop(){
   //Writing to lcd
   lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
 
+  //delay(2000);
+}
+// End of main program
+
+
+
+//Initializing the wifi on the ESP-32
+void initWireless(){
+  lcd.clear();
+  // attempt to connect to Wifi network:
+  while (status != WL_CONNECTED) {
+  Serial.print("Attempting to connect to WPA SSID: ");
+  lcd.setCursor(0, 0);
+  lcd.print("CONNECTING TO WIFI..");
+  lcd.setCursor(0, 1);
+  lcd.print("NAME: " + String(ssid));
+  lcd.setCursor(0, 2);
+  lcd.print("PLEASE WAIT ...");
+  Serial.println(ssid);
+
+  // Connect to WPA/WPA2 network:
+  status = WiFi.begin(ssid, pass);
+      // wait 10 seconds for connection:
+    delay(5000);
+  }
+
+  // you're connected now, so print out the data:
+  Serial.print("You're connected to the network " +  String(ssid) + "\n");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("WIFI CONNECTION MADE");
+  lcd.setCursor(0,2);
+  lcd.print("TO " + String(ssid) + "!");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+
+  delay(3000);
+  lcd.clear();
 }
 
 
