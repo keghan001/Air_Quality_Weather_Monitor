@@ -1,10 +1,10 @@
 //MQ-135 Sensor declarations
 #include <MQUnifiedsensor.h>
-#define placa "ESP32"
-#define Voltage_Resolution 5
-#define pin 2 //Analog input 0 of your arduino
+#define placa "ESP-32"
+#define Voltage_Resolution 3.3 // 3V3 <- IMPORTANT. Source: https://randomnerdtutorials.com/esp32-adc-analog-read-arduino-ide/
+#define pin 35 //Analog input 0 of your arduino
 #define type "MQ-135" //MQ135
-#define ADC_Bit_Resolution 10 // For arduino UNO/MEGA/NANO
+#define ADC_Bit_Resolution 12 // ESP-32 bit resolution. Source: https://randomnerdtutorials.com/esp32-adc-analog-read-arduino-ide/
 #define RatioMQ135CleanAir 3.6//RS / R0 = 3.6 ppm  
 //Declare Sensor
 MQUnifiedsensor MQ135(placa, Voltage_Resolution, ADC_Bit_Resolution, pin, type);
