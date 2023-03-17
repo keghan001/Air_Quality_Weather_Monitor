@@ -51,6 +51,20 @@ const char* pass = SECRET_PASS;  // your network password
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 
+// 9. Declaration for the ATH20 sensor
+// #include <AHT20.h>
+// AHT20 aht20;
+
+
+
+
+//Metro Class for timing and synchronization
+#include <Metro.h>
+//Task timers for metro tasks
+Metro taskLcdShow = Metro(650);
+Metro taskWriteSD = Metro(10000);
+
+
 //Handling the readings results
 #define valSize 8
 float valuesArray[valSize];
@@ -111,6 +125,7 @@ void setup(){
     initSD(); //SD card initializer
     initBmp(); // Pressure sensor initializer
     initGasSensor(); // Gas sensor initializer
+    // initAth20(); // ATH20 sensor initializer
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
     initWireless(); //Initializes the Wifi
@@ -160,10 +175,20 @@ void loop(){
   Serial.println(sensorStrVals);
 
   //Appending cont char* readings values to the file in SD
-  appendFile(SD, "/datalog.csv", sensorCharV);
+  // appendFile(SD, "/datalog.csv", sensorCharV);
+  
+  //Using Metro to append file to SD card
+  if(taskWriteSD.check()){
+    appendFile(SD, "/datalog.csv", sensorCharV);
+  }
 
   //Writing to lcd
-  lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
+  //lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
+
+  //Using metro to show lcd display
+  if(taskLcdShow.check()){
+    lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
+  }
 
   //delay(2000);
 }
@@ -310,7 +335,7 @@ void initSD(){
     }
     Serial.println("card initialized.");
 
-    delay(700);
+    delay(850);
     lcd.clear();
 }
 
@@ -328,7 +353,7 @@ void initBmp(){
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
 
-  delay(700);
+  delay(850);
   lcd.clear();
 }
 
@@ -364,7 +389,7 @@ void initGasSensor(){
     if(isinf(calcR0)) {Serial.println("Warning: Conection issue, (Open circuit detected)"); while(1);}
     if(calcR0 == 0){Serial.println("Warning: Conection issue found, (Analog pin shorts to ground)"); while(1);}
 
-    delay(700);
+    delay(100);
     lcd.clear();
   }
 
@@ -398,11 +423,27 @@ void initRtc(){
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
 
-  delay(700);
+  delay(850);
   lcd.clear();
 }
 
 
+// 5. Initializing the ATH20 sensor
+// void initAth20(){
+//   //Check if the AHT20 will acknowledge
+
+//   // sensorMsg("AHT 20 Sensor...");  //Lcd initialization message
+
+//   if (aht20.begin() == false)
+//   {
+//     Serial.println("AHT20 not detected. Please check wiring. Freezing.");
+//     while (1);
+//   }
+//   Serial.println("AHT20 acknowledged.");
+
+//   delay(850)
+//   lcd.clear();
+// }
 
 
 //LCD welcome intro messages 
@@ -452,7 +493,7 @@ void introLcd(){
 //Displaying sensor values on the 20x40 lcd display
 void lcdShow(float temp, float humidity, float pressure, 
               float uvIndex, float CO, float CO2) {
-  //
+  // float PM25
             //Temperature and Humidity ROW 1
             lcd.clear();
             lcd.setCursor(0,0);
@@ -464,7 +505,7 @@ void lcdShow(float temp, float humidity, float pressure,
             lcd.setCursor(0,1);
             lcd.print("PRESS=" + String(pressure) + "Pa");
             // lcd.setCursor(0,1); // We'll choode particulate matter over pressure in final design
-            // lcd.print("PM2.5=" + String(pmConc));
+            // lcd.print("PM2.5=" + String(PM25));
 
             //UV INDEX and CO ROW 3
             lcd.setCursor(0,2);
@@ -479,7 +520,7 @@ void lcdShow(float temp, float humidity, float pressure,
             // lcd.print("NH4=" + String(NH4));
 
 
-            delay(1000);
+            delay(750);
             lcd.clear();
 
 }
