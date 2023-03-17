@@ -93,21 +93,20 @@ void alert(int alertPin, int repsAlert=1, int waitAlert=1000) {
 void setup(){
     Serial.begin(115200);
     Wire.begin();
-    initRtc();
     lcd.begin(); // Lcd display initializer
     //introLcd(); // Lcd Intro messages
 
-    lcd.setCursor(0,1);
-    lcd.print("Initializing Sensors");
-    lcd.setCursor(0,2);
-    lcd.print("Please wait...");
+    initMsg();
+    delay(1500);
 
+    initRtc(); //Initializing the rtc
     HT.begin(); //DHT initializer
     initSD(); //SD card initializer
     initBmp(); // Pressure sensor initializer
     initGasSensor(); // Gas sensor initializer
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
+    initMsg();
     alert(alertPin, 5, 400);
 
     lcd.clear();
@@ -158,6 +157,19 @@ void loop(){
   //Writing to lcd
   lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
 
+}
+
+
+void initMsg(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZING SENSORS");
+  lcd.setCursor(0,2);
+  lcd.print("PLEASE WAIT...");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
 }
 
 
@@ -213,16 +225,41 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 
 //1. Initializing the SD Card Shield in the setup function
 void initSD(){
+    //Lcd initialization message
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZING");
+  lcd.setCursor(0,2);
+  lcd.print("SD CARD...");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+
   Serial.println("Initializing SD card...");
     if(!SD.begin()){
         Serial.println("Card Mount Failed");
         return;
     }
     Serial.println("card initialized.");
+
+    delay(700);
+    lcd.clear();
 }
 
 //2. Initializing the pressure sensor 
 void initBmp(){
+  //Lcd initialization message
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZING");
+  lcd.setCursor(0,2);
+  lcd.print("PRESSURE SENSOR...");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+
   bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
 
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -230,11 +267,27 @@ void initBmp(){
                   Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+
+
+  delay(700);
+  lcd.clear();
 }
 
 
 //3. Initializes the Gas sensor MQ-135 to work with various gases
 void initGasSensor(){
+    //Lcd initialization message
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZING");
+  lcd.setCursor(0,2);
+  lcd.print("GAS SENSOR...");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+
+
     MQ135.setRegressionMethod(1); //_PPM =  a*ratio^b
     
     MQ135.init(); 
@@ -259,12 +312,26 @@ void initGasSensor(){
     
     if(isinf(calcR0)) {Serial.println("Warning: Conection issue, (Open circuit detected)"); while(1);}
     if(calcR0 == 0){Serial.println("Warning: Conection issue found, (Analog pin shorts to ground)"); while(1);}
+
+    delay(700);
+    lcd.clear();
   }
 
 
 // 4. Initializes the Rtc on the Shield
 
 void initRtc(){
+    //Lcd initialization message
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZING");
+  lcd.setCursor(0,2);
+  lcd.print("REAL TIME CLOCK...");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+
     if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
     Serial.flush();
@@ -287,6 +354,9 @@ void initRtc(){
   // This line sets the RTC with an explicit date & time, for example to set
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+
+  delay(700);
+  lcd.clear();
 }
 
 
