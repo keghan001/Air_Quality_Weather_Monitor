@@ -160,6 +160,7 @@ void loop(){
 }
 
 
+//Message when sensors and other components are initializing
 void initMsg(){
   lcd.clear();
   lcd.setCursor(0,0);
@@ -172,6 +173,32 @@ void initMsg(){
   lcd.print("--------------------");
 }
 
+//Message when sensors and other components have been initialized
+void endMsg(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZATION DONE!");
+  lcd.setCursor(0,2);
+  lcd.print("PROGRAM STARTING...");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+}
+
+//Sensors Calibrating messages
+void sensorMsg(String msg){
+  //Lcd initialization message
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("--------------------");
+  lcd.setCursor(0,1);
+  lcd.print("INITIALIZING");
+  lcd.setCursor(0,2);
+  lcd.print(msg);
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+}
 
 
 //Takes in an array of floats and converts to String 
@@ -225,16 +252,8 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 
 //1. Initializing the SD Card Shield in the setup function
 void initSD(){
-    //Lcd initialization message
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZING");
-  lcd.setCursor(0,2);
-  lcd.print("SD CARD...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
+    
+  sensorMsg("SD CARD..."); //Lcd initialization message
 
   Serial.println("Initializing SD card...");
     if(!SD.begin()){
@@ -249,16 +268,8 @@ void initSD(){
 
 //2. Initializing the pressure sensor 
 void initBmp(){
-  //Lcd initialization message
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZING");
-  lcd.setCursor(0,2);
-  lcd.print("PRESSURE SENSOR...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
+ 
+  sensorMsg("PRESSURE SENSOR..."); //Lcd initialization message
 
   bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
 
@@ -276,16 +287,8 @@ void initBmp(){
 
 //3. Initializes the Gas sensor MQ-135 to work with various gases
 void initGasSensor(){
-    //Lcd initialization message
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZING");
-  lcd.setCursor(0,2);
-  lcd.print("GAS SENSOR...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
+
+  sensorMsg("GAS SENSOR...");  //Lcd initialization message
 
 
     MQ135.setRegressionMethod(1); //_PPM =  a*ratio^b
@@ -321,16 +324,8 @@ void initGasSensor(){
 // 4. Initializes the Rtc on the Shield
 
 void initRtc(){
-    //Lcd initialization message
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZING");
-  lcd.setCursor(0,2);
-  lcd.print("REAL TIME CLOCK...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
+
+  sensorMsg("REAL TIME CLOCK...");  //Lcd initialization message
 
     if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
