@@ -33,6 +33,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 //Declare Sensor
 MQUnifiedsensor MQ135(placa, Voltage_Resolution, ADC_Bit_Resolution, gasPin, gasType);
 
+
 // 6. UV Sensor declarations using an analog pin
 int uvPin = 34;   // select the input for the UV sensor pin A3 on UNO
 
@@ -56,13 +57,11 @@ int status = WL_IDLE_STATUS;     // the Wifi radio's status
 // AHT20 aht20;
 
 
-
-
 //Metro Class for timing and synchronization
 #include <Metro.h>
 //Task timers for metro tasks
 Metro taskLcdShow = Metro(650);
-Metro taskWriteSD = Metro(10000);
+Metro taskWriteSD = Metro(20000);
 
 
 //Handling the readings results
@@ -138,6 +137,8 @@ void setup(){
 //Main Program
 void loop(){
 
+  initWireless(); // Checks if Wifi is still connected or it reconnects
+
   //Reads the timestamp from the function and converts to const char
   timeStamp = dataTime();
 
@@ -160,9 +161,7 @@ void loop(){
 
   //Reading the uv index
   uvIndex = readUV(uvPin);
-
-   
-
+  
 
   // Placing values into the array
   valueToArray(valuesArray, temp, humidity, pressure, altitude, CO, CO2, NH4, uvIndex);
@@ -176,7 +175,7 @@ void loop(){
 
   //Appending cont char* readings values to the file in SD
   // appendFile(SD, "/datalog.csv", sensorCharV);
-  
+
   //Using Metro to append file to SD card
   if(taskWriteSD.check()){
     appendFile(SD, "/datalog.csv", sensorCharV);
@@ -203,7 +202,7 @@ void initWireless(){
   while (status != WL_CONNECTED) {
   Serial.print("Attempting to connect to WPA SSID: ");
   lcd.setCursor(0, 0);
-  lcd.print("CONNECTING TO WIFI..");
+  lcd.print("CONNECTING TO WIFI");
   lcd.setCursor(0, 1);
   lcd.print("NAME: " + String(ssid));
   lcd.setCursor(0, 2);
