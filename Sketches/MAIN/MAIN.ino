@@ -114,12 +114,17 @@ int alertPin = 17; // pin 4 on UNO
 void alert(int alertPin, int repsAlert=1, int waitAlert=1000) {
   int reps = repsAlert;
   int waits = waitAlert;
+
   for(int i=0; i<reps; i++){
     digitalWrite(alertPin, HIGH);
+    lcd.noBacklight();
     delay(waits);
+    lcd.backlight();
     digitalWrite(alertPin, LOW);
     delay(waits);
   }
+  
+  lcd.backlight();
 }
 
 
@@ -291,6 +296,19 @@ void endMsg(){
   lcd.print("--------------------");
 }
 
+//Displays the active message
+void activeMsg(){
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("WEATHER_AIR_QUALITY");
+  lcd.setCursor(0,1);
+  lcd.print("MONITORING SYSTEM");
+  lcd.setCursor(0,2);
+  lcd.print("DESIGNED BY KEGHAN");
+  lcd.setCursor(0,3);
+  lcd.print("--------------------");
+}
+
 //Sensors Calibrating messages
 void sensorMsg(String act, String msg){
   //Lcd initialization message
@@ -320,6 +338,25 @@ void remoteCheck(){
       delay(2000);
       resetSystem(); //call reset
     }
+    //For turning on and off the Lcd backlight
+    else if (cmd.value == 0xFFA857){
+      lcd.backlight(); // Turn On backlight
+    }
+    else if (cmd.value == 0xFFE01F){
+      lcd.noBacklight(); // Turn Off backlight
+    }
+    else if (cmd.value == 0xFF906F){
+      lcd.noDisplay();
+    }
+    else if (cmd.value == 0xFFC23D){
+      lcd.display();
+    }
+    else if (cmd.value == 0xFF6897){
+      activeMsg();
+      delay(3500);
+      lcd.clear();
+    }
+
     
     irrecv.resume();  // Receive the next value
   }
