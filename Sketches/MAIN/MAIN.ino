@@ -5,7 +5,7 @@
 //1. Temperature, Humidity Sensor declaration
 #include "DHT.h"
 #define Type DHT22
-#define sensePin 26 // This pin is 02 on the UNO
+#define sensePin 25 // This pin is 02 on the UNO
 DHT HT(sensePin, Type);
 
 //2. SD Card declarations
@@ -56,12 +56,26 @@ int status = WL_IDLE_STATUS;     // the Wifi radio's status
 // #include <AHT20.h>
 // AHT20 aht20;
 
+// 10. For the remote control
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <IRutils.h>
+#define kRecvPin 26
+IRrecv irrecv(kRecvPin);
+decode_results cmd;
+
+
+//Resetting the device using software
+void(* resetSystem) (void) = 0;  // declare reset fuction at address 0
+
+
 
 //Metro Class for timing and synchronization
 #include <Metro.h>
 //Task timers for metro tasks
-Metro taskLcdShow = Metro(650);
-Metro taskWriteSD = Metro(20000);
+Metro taskLcdShow = Metro(650); // For the Lcd display of results
+Metro taskWriteSD = Metro(15000); // For writing to SD card
+Metro  taskRemoteRec = Metro(100); // For the remote control
 
 
 //Handling the readings results
@@ -115,10 +129,10 @@ void setup(){
     Wire.begin();
     lcd.begin(); // Lcd display initializer
     //introLcd(); // Lcd Intro messages
-
+    
     initMsg();
     delay(1500);
-
+    irrecv.enableIRIn();  // Start the receiver
     initRtc(); //Initializing the rtc
     HT.begin(); //DHT initializer
     initSD(); //SD card initializer
@@ -137,7 +151,7 @@ void setup(){
 //Main Program
 void loop(){
 
-  initWireless(); // Checks if Wifi is still connected or it reconnects
+  reconnectWireless();// Checks if Wifi is still connected or it reconnects
 
   //Reads the timestamp from the function and converts to const char
   timeStamp = dataTime();
@@ -189,6 +203,12 @@ void loop(){
     lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
   }
 
+
+  //Checking for remote values using Metro tasks
+  if(taskRemoteRec.check()){
+    remoteCheck();
+  }
+
   //delay(2000);
 }
 // End of main program
@@ -231,6 +251,17 @@ void initWireless(){
   lcd.clear();
 }
 
+void reconnectWireless(){
+  while (status != WL_CONNECTED) {
+    // Connect to WPA/WPA2 network:
+  status = WiFi.begin(ssid, pass);
+      // wait 10 seconds for connection:
+    //delay(5000);
+  }
+
+
+}
+
 
 //Message when sensors and other components are initializing
 void initMsg(){
@@ -259,17 +290,38 @@ void endMsg(){
 }
 
 //Sensors Calibrating messages
-void sensorMsg(String msg){
+void sensorMsg(String act, String msg){
   //Lcd initialization message
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("--------------------");
   lcd.setCursor(0,1);
-  lcd.print("INITIALIZING");
+  lcd.print(act);
   lcd.setCursor(0,2);
   lcd.print(msg);
   lcd.setCursor(0,3);
   lcd.print("--------------------");
+}
+
+
+void remoteCheck(){
+  if (irrecv.decode(&cmd)) {
+    if (cmd.value == 0xFFA25D){
+      Serial.println("Device restarting\n");
+      sensorMsg("DEVICE IS RESTARTING", "PLEASE WAIT...");
+      delay(2000);
+      resetSystem(); //call reset
+    }
+    else if (cmd.value == 0xFF629D){
+      Serial.println("Device restarting\n");
+      sensorMsg("DEVICE IS RESTARTING", "PLEASE WAIT...");
+      delay(2000);
+      resetSystem(); //call reset
+    }
+    
+    irrecv.resume();  // Receive the next value
+  }
+
 }
 
 
@@ -325,7 +377,7 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
 //1. Initializing the SD Card Shield in the setup function
 void initSD(){
     
-  sensorMsg("SD CARD..."); //Lcd initialization message
+  sensorMsg("INITIALIZATION", "SD CARD..."); //Lcd initialization message
 
   Serial.println("Initializing SD card...");
     if(!SD.begin()){
@@ -341,7 +393,7 @@ void initSD(){
 //2. Initializing the pressure sensor 
 void initBmp(){
  
-  sensorMsg("PRESSURE SENSOR..."); //Lcd initialization message
+  sensorMsg("CALIBRATING", "PRESSURE SENSOR..."); //Lcd initialization message
 
   bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
 
@@ -360,7 +412,7 @@ void initBmp(){
 //3. Initializes the Gas sensor MQ-135 to work with various gases
 void initGasSensor(){
 
-  sensorMsg("GAS SENSOR...");  //Lcd initialization message
+  sensorMsg("INITIALIZATION", "GAS SENSOR...");  //Lcd initialization message
 
 
     MQ135.setRegressionMethod(1); //_PPM =  a*ratio^b
@@ -397,7 +449,7 @@ void initGasSensor(){
 
 void initRtc(){
 
-  sensorMsg("REAL TIME CLOCK...");  //Lcd initialization message
+  sensorMsg("INITIALIZATION", "REAL TIME CLOCK...");  //Lcd initialization message
 
     if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
@@ -431,7 +483,7 @@ void initRtc(){
 // void initAth20(){
 //   //Check if the AHT20 will acknowledge
 
-//   // sensorMsg("AHT 20 Sensor...");  //Lcd initialization message
+//   // sensorMsg("INITIALIZATION", "AHT 20 Sensor...");  //Lcd initialization message
 
 //   if (aht20.begin() == false)
 //   {
@@ -519,7 +571,7 @@ void lcdShow(float temp, float humidity, float pressure,
             // lcd.print("NH4=" + String(NH4));
 
 
-            delay(750);
+            delay(100);
             lcd.clear();
 
 }
@@ -531,7 +583,7 @@ int readUV(int sensorPin){
   int sensorValue = 0;
   
   sensorValue = analogRead(sensorPin);  //connect UV sensor to Analog A1 on UNO  
-  int voltage = (sensorValue * (5.0 / 1023.0))*1000;  //Voltage in miliVolts
+  int voltage = (sensorValue/4095.0*3.3) *1000;  //Voltage in miliVolts
   
   if(voltage<50)
   {
