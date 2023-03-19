@@ -151,6 +151,11 @@ void setup(){
 //Main Program
 void loop(){
 
+  //Checking for remote values using Metro tasks
+  if(taskRemoteRec.check()){
+    remoteCheck();
+  }
+
   reconnectWireless();// Checks if Wifi is still connected or it reconnects
 
   //Reads the timestamp from the function and converts to const char
@@ -204,10 +209,7 @@ void loop(){
   }
 
 
-  //Checking for remote values using Metro tasks
-  if(taskRemoteRec.check()){
-    remoteCheck();
-  }
+
 
   //delay(2000);
 }
@@ -403,7 +405,7 @@ void initBmp(){
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
-
+  Serial.println("BMP280 has been initialised succesfully!");
   delay(850);
   lcd.clear();
 }
@@ -473,7 +475,7 @@ void initRtc(){
   // This line sets the RTC with an explicit date & time, for example to set
   // January 21, 2014 at 3am you would call:
   // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-
+  Serial.println("RTC initialized succesfully");
   delay(850);
   lcd.clear();
 }
