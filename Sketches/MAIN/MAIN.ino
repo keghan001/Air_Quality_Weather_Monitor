@@ -326,32 +326,32 @@ void sensorMsg(String act, String msg){
 
 void remoteCheck(){
   if (irrecv.decode(&cmd)) {
-    if (cmd.value == 0xFFA25D){
+    if (cmd.value == 0xFFA25D){ // CH- on remote
       Serial.println("Device restarting\n");
       sensorMsg("DEVICE IS RESTARTING", "PLEASE WAIT...");
       delay(2000);
       resetSystem(); //call reset
     }
-    else if (cmd.value == 0xFF629D){
+    else if (cmd.value == 0xFF629D){ //CH on remote
       Serial.println("Device restarting\n");
       sensorMsg("DEVICE IS RESTARTING", "PLEASE WAIT...");
       delay(2000);
       resetSystem(); //call reset
     }
     //For turning on and off the Lcd backlight
-    else if (cmd.value == 0xFFA857){
+    else if (cmd.value == 0xFFA857){ //VOL+ on remote
       lcd.backlight(); // Turn On backlight
     }
-    else if (cmd.value == 0xFFE01F){
+    else if (cmd.value == 0xFFE01F){ //VOL- on remote
       lcd.noBacklight(); // Turn Off backlight
     }
-    else if (cmd.value == 0xFF906F){
+    else if (cmd.value == 0xFF906F){ //EQ on remote
       lcd.noDisplay();
     }
-    else if (cmd.value == 0xFFC23D){
+    else if (cmd.value == 0xFFC23D){ //PLAY on remote
       lcd.display();
     }
-    else if (cmd.value == 0xFF6897){
+    else if (cmd.value == 0xFF6897){ // 0 on the remote
       activeMsg();
       delay(3500);
       lcd.clear();
