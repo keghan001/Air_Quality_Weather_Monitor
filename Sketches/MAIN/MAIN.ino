@@ -211,7 +211,7 @@ void loop(){
 
 
 
-  //delay(2000);
+  delay(500);
 }
 // End of main program
 
