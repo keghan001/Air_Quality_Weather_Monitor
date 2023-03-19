@@ -111,6 +111,13 @@ void valueToArray(float arrayVals[valSize], float temp, float humidity, float pr
 
 //For alerting using both an LED and an active buzzer
 int alertPin = 17; // pin 4 on UNO
+
+void beepAlert(){
+  digitalWrite(alertPin, HIGH);
+  delay(350);
+  digitalWrite(alertPin, LOW);
+}
+
 void alert(int alertPin, int repsAlert=1, int waitAlert=1000) {
   int reps = repsAlert;
   int waits = waitAlert;
@@ -160,8 +167,6 @@ void loop(){
   if(taskRemoteRec.check()){
     remoteCheck();
   }
-
-  reconnectWireless();// Checks if Wifi is still connected or it reconnects
 
   //Reads the timestamp from the function and converts to const char
   timeStamp = dataTime();
@@ -262,10 +267,8 @@ void reconnectWireless(){
   while (status != WL_CONNECTED) {
     // Connect to WPA/WPA2 network:
   status = WiFi.begin(ssid, pass);
-      // wait 10 seconds for connection:
-    //delay(5000);
+    delay(3000);
   }
-
 
 }
 
@@ -324,15 +327,18 @@ void sensorMsg(String act, String msg){
 }
 
 
+// Using the IR remote to receive various commands \786
 void remoteCheck(){
   if (irrecv.decode(&cmd)) {
     if (cmd.value == 0xFFA25D){ // CH- on remote
+      beepAlert();
       Serial.println("Device restarting\n");
       sensorMsg("DEVICE IS RESTARTING", "PLEASE WAIT...");
       delay(2000);
       resetSystem(); //call reset
     }
     else if (cmd.value == 0xFF629D){ //CH on remote
+      beepAlert();
       Serial.println("Device restarting\n");
       sensorMsg("DEVICE IS RESTARTING", "PLEASE WAIT...");
       delay(2000);
@@ -340,21 +346,47 @@ void remoteCheck(){
     }
     //For turning on and off the Lcd backlight
     else if (cmd.value == 0xFFA857){ //VOL+ on remote
+      beepAlert();
       lcd.backlight(); // Turn On backlight
     }
     else if (cmd.value == 0xFFE01F){ //VOL- on remote
+      beepAlert();
       lcd.noBacklight(); // Turn Off backlight
     }
     else if (cmd.value == 0xFF906F){ //EQ on remote
-      lcd.noDisplay();
+      beepAlert();
+      lcd.noDisplay(); //turns display off
     }
     else if (cmd.value == 0xFFC23D){ //PLAY on remote
-      lcd.display();
+      beepAlert();
+      lcd.display(); // turns display on
     }
     else if (cmd.value == 0xFF6897){ // 0 on the remote
-      activeMsg();
+      beepAlert();
+      activeMsg(); // displays active message
       delay(3500);
       lcd.clear();
+    }
+    else if (cmd.value == 0xFF9867){ //100+ on remote
+      beepAlert();
+      delay(4000); // pauses program for 4s
+    }
+    else if (cmd.value == 0xFFB04F){ // 200+ on remote
+      beepAlert();
+      delay(10000); //pauses program for 10s
+    }
+     else if (cmd.value == 0xFF52AD){ // 9 on the remote  
+      beepAlert();
+      // Reinitializes sensors and other components
+      HT.begin(); //DHT initializer
+      initSD(); //SD card initializer
+      initBmp(); // Pressure sensor initializer
+      initGasSensor(); // Gas sensor initializer
+      // initAth20(); // ATH20 sensor initializer
+    }
+    else if (cmd.value == 0xFF42BD){ // 7 on the remote 
+      beepAlert();
+      reconnectWireless(); // Reinitializes the WiFi
     }
 
     
