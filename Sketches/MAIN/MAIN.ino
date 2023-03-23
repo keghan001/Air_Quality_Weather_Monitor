@@ -111,7 +111,7 @@ void valueToArray(float arrayVals[valSize], float temp, float humidity, float pr
 }
 
 //For alerting using both an LED and an active buzzer
-int alertPin = 17; // pin 4 on UNO
+int alertPin = 12; // pin 8 on UNO
 
 void beepAlert(){
   digitalWrite(alertPin, HIGH);
@@ -150,11 +150,13 @@ void setup(){
     HT.begin(); //DHT initializer
     initSD(); //SD card initializer
     initBmp(); // Pressure sensor initializer
-    initGasSensor(); // Gas sensor initializer
     // initAth20(); // ATH20 sensor initializer
+    initGasSensor(); // Gas sensor initializer
+    //delay(10000);
+    initWireless(); //Initializes the Wifi
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
-    initWireless(); //Initializes the Wifi
+    
     endMsg();
     alert(alertPin, 5, 400);
 
@@ -242,6 +244,7 @@ void initWireless(){
 
   if(!res) {
         Serial.println("Failed to connect");
+        sensorMsg("WIFI CAN'T CONNECT!!", "TRY AGAIN LATER");
         // ESP.restart();
   } 
   else {
@@ -257,14 +260,6 @@ void initWireless(){
   lcd.clear();
 }
 
-// void reconnectWireless(){
-//   while (status != WL_CONNECTED) {
-//     // Connect to WPA/WPA2 network:
-//   status = WiFi.begin(ssid, pass);
-//     delay(3000);
-//   }
-
-// }
 
 
 //Message when sensors and other components are initializing
@@ -380,7 +375,7 @@ void remoteCheck(){
     }
     else if (cmd.value == 0xFF42BD){ // 7 on the remote 
       beepAlert();
-      //reconnectWireless(); // Reinitializes the WiFi
+      initWireless(); // Reinitializes the WiFi
     }
 
     
@@ -505,7 +500,7 @@ void initGasSensor(){
     if(isinf(calcR0)) {Serial.println("Warning: Conection issue, (Open circuit detected)"); while(1);}
     if(calcR0 == 0){Serial.println("Warning: Conection issue found, (Analog pin shorts to ground)"); while(1);}
 
-    delay(100);
+    delay(10000);
     lcd.clear();
   }
 
