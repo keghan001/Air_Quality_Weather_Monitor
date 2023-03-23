@@ -46,9 +46,7 @@ String timeStamp;
 
 //8. WiFi declarations
 #include "WiFi.h"
-#include "secrets.h"
-const char* ssid = SECRET_SSID;     //  your network SSID (name)
-const char* pass = SECRET_PASS;  // your network password
+#include <WiFiManager.h>
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 
@@ -73,7 +71,7 @@ void(* resetSystem) (void) = 0;  // declare reset fuction at address 0
 //Metro Class for timing and synchronization
 #include <Metro.h>
 //Task timers for metro tasks
-Metro taskLcdShow = Metro(650); // For the Lcd display of results
+Metro taskLcdShow = Metro(100); // For the Lcd display of results
 Metro taskWriteSD = Metro(15000); // For writing to SD card
 Metro  taskRemoteRec = Metro(100); // For the remote control
 
@@ -94,6 +92,9 @@ float CO;
 float CO2;
 float NH4;
 float uvIndex;
+float pm1;
+float pm25;
+float pm10;
 
 
 //Placing values into the array
@@ -114,7 +115,7 @@ int alertPin = 17; // pin 4 on UNO
 
 void beepAlert(){
   digitalWrite(alertPin, HIGH);
-  delay(350);
+  delay(200);
   digitalWrite(alertPin, LOW);
 }
 
@@ -211,17 +212,17 @@ void loop(){
   }
 
   //Writing to lcd
-  //lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
+  lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
 
   //Using metro to show lcd display
-  if(taskLcdShow.check()){
-    lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
-  }
+  // if(taskLcdShow.check()){
+  //   lcdShow(temp, humidity, pressure, uvIndex, CO, CO2);
+  // }
 
 
 
 
-  delay(500);
+  delay(500); //This delay is now in the lcdShow function
 }
 // End of main program
 
@@ -231,46 +232,39 @@ void loop(){
 void initWireless(){
   lcd.clear();
   // attempt to connect to Wifi network:
-  while (status != WL_CONNECTED) {
-  Serial.print("Attempting to connect to WPA SSID: ");
-  lcd.setCursor(0, 0);
-  lcd.print("CONNECTING TO WIFI");
-  lcd.setCursor(0, 1);
-  lcd.print("NAME: " + String(ssid));
-  lcd.setCursor(0, 2);
-  lcd.print("PLEASE WAIT ...");
-  Serial.println(ssid);
+  sensorMsg("CONNECTING TO WIFI", "PLEASE WAIT...");
+  WiFiManager wm;
 
-  // Connect to WPA/WPA2 network:
-  status = WiFi.begin(ssid, pass);
-      // wait 10 seconds for connection:
-    delay(5000);
-  }
+  bool res;
+    // res = wm.autoConnect(); // auto generated AP name from chipid
+    // res = wm.autoConnect("AutoConnectAP"); // anonymous ap
+  res = wm.autoConnect("AirQ Monitor","kegman00"); // password protected ap
 
-  // you're connected now, so print out the data:
-  Serial.print("You're connected to the network " +  String(ssid) + "\n");
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("WIFI CONNECTION MADE");
-  lcd.setCursor(0,2);
-  lcd.print("TO " + String(ssid) + "!");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
+  if(!res) {
+        Serial.println("Failed to connect");
+        // ESP.restart();
+  } 
+  else {
+        //if you get here you have connected to the WiFi   
+        String ssid = wm.getWiFiSSID(); 
+        Serial.println("You're connected to the network " +  ssid );
+        sensorMsg("WIFI CONNECTION MADE", "TO: " + ssid);
 
-  delay(3000);
+    }
+
+
+  delay(2500);
   lcd.clear();
 }
 
-void reconnectWireless(){
-  while (status != WL_CONNECTED) {
-    // Connect to WPA/WPA2 network:
-  status = WiFi.begin(ssid, pass);
-    delay(3000);
-  }
+// void reconnectWireless(){
+//   while (status != WL_CONNECTED) {
+//     // Connect to WPA/WPA2 network:
+//   status = WiFi.begin(ssid, pass);
+//     delay(3000);
+//   }
 
-}
+// }
 
 
 //Message when sensors and other components are initializing
@@ -386,7 +380,7 @@ void remoteCheck(){
     }
     else if (cmd.value == 0xFF42BD){ // 7 on the remote 
       beepAlert();
-      reconnectWireless(); // Reinitializes the WiFi
+      //reconnectWireless(); // Reinitializes the WiFi
     }
 
     
@@ -642,8 +636,8 @@ void lcdShow(float temp, float humidity, float pressure,
             // lcd.print("NH4=" + String(NH4));
 
 
-            delay(100);
-            lcd.clear();
+            //delay(550);
+            // lcd.clear();
 
 }
 
