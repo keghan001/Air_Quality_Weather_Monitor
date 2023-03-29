@@ -2,11 +2,9 @@
 #include <Wire.h>
 //
 
-//1. Temperature, Humidity Sensor declaration
-#include "DHT.h"
-#define Type DHT22
-#define sensePin 25 // This pin is 02 on the UNO
-DHT HT(sensePin, Type);
+// 1. Declaration for the ATH20 sensor
+#include <AHT20.h>
+AHT20 aht20;
 
 //2. SD Card declarations
 #include "FS.h"
@@ -50,11 +48,7 @@ String timeStamp;
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 
-// 9. Declaration for the ATH20 sensor
-// #include <AHT20.h>
-// AHT20 aht20;
-
-// 10. For the remote control
+// 9. For the remote control
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
 #include <IRutils.h>
@@ -143,21 +137,21 @@ void setup(){
     lcd.begin(); // Lcd display initializer
     //introLcd(); // Lcd Intro messages
     
-    initMsg();
+    sensorMsg("INITIALIZING SENSORS", "PLEASE WAIT...");
     delay(1500);
     irrecv.enableIRIn();  // Start the receiver
     initRtc(); //Initializing the rtc
     HT.begin(); //DHT initializer
     initSD(); //SD card initializer
     initBmp(); // Pressure sensor initializer
-    // initAth20(); // ATH20 sensor initializer
+    initAth20(); // ATH20 sensor initializer
     initGasSensor(); // Gas sensor initializer
     //delay(10000);
-    initWireless(); //Initializes the Wifi
+    //initWireless(); //Initializes the Wifi
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
     
-    endMsg();
+    sensorMsg("INITIALIZATION DONE!", "PROGRAM STARTING...");
     alert(alertPin, 5, 400);
 
     lcd.clear();
@@ -175,8 +169,8 @@ void loop(){
   timeStamp = dataTime();
 
   //Temperature and humidity readings
-  temp = bmp.readTemperature(); // Takes readings in Celcius (C)
-  humidity = HT.readHumidity(); // Readings are in percentage (%)
+  temp = aht20.getTemperature(); // Takes readings in Celcius (C)
+  humidity = aht20.getHumidity(); // Readings are in percentage (%)
   
   //Pressure and Altitude readings
   pressure = bmp.readPressure(); //Takes readings in Pascal (Pa)
@@ -262,32 +256,6 @@ void initWireless(){
 
 
 
-//Message when sensors and other components are initializing
-void initMsg(){
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZING SENSORS");
-  lcd.setCursor(0,2);
-  lcd.print("PLEASE WAIT...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
-}
-
-//Message when sensors and other components have been initialized
-void endMsg(){
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZATION DONE!");
-  lcd.setCursor(0,2);
-  lcd.print("PROGRAM STARTING...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
-}
-
 //Displays the active message
 void activeMsg(){
   lcd.clear();
@@ -371,7 +339,7 @@ void remoteCheck(){
       initSD(); //SD card initializer
       initBmp(); // Pressure sensor initializer
       initGasSensor(); // Gas sensor initializer
-      // initAth20(); // ATH20 sensor initializer
+      initAth20(); // ATH20 sensor initializer
     }
     else if (cmd.value == 0xFF42BD){ // 7 on the remote 
       beepAlert();
@@ -540,21 +508,21 @@ void initRtc(){
 
 
 // 5. Initializing the ATH20 sensor
-// void initAth20(){
-//   //Check if the AHT20 will acknowledge
+void initAth20(){
+  //Check if the AHT20 will acknowledge
 
-//   // sensorMsg("INITIALIZATION", "AHT 20 Sensor...");  //Lcd initialization message
+  sensorMsg("INITIALIZATION", "AHT 20 Sensor...");  //Lcd initialization message
 
-//   if (aht20.begin() == false)
-//   {
-//     Serial.println("AHT20 not detected. Please check wiring. Freezing.");
-//     while (1);
-//   }
-//   Serial.println("AHT20 acknowledged.");
+  if (aht20.begin() == false)
+  {
+    Serial.println("AHT20 not detected. Please check wiring. Freezing.");
+    while (1);
+  }
+  Serial.println("AHT20 acknowledged.");
 
-//   delay(850)
-//   lcd.clear();
-// }
+  delay(850)
+  lcd.clear();
+}
 
 
 //LCD welcome intro messages 
@@ -580,10 +548,10 @@ void introLcd(){
   lcd.print("KWESI MANU EGHAN");
   lcd.setCursor(0,2);
   delay(1000);
-  lcd.print("EMMANUEL OPOKU");
+  lcd.print("AGYEI KWAKU DARKO");
   lcd.setCursor(0,3);
   delay(1000);
-  lcd.print("AGYEI KWAKU DARKO");
+  lcd.print("EMMANUEL OPOKU");
   delay(3000);
   lcd.clear();
 
@@ -604,7 +572,7 @@ void introLcd(){
 //Displaying sensor values on the 20x40 lcd display
 void lcdShow(float temp, float humidity, float pressure, 
               float uvIndex, float CO, float CO2) {
-  // float PM25
+  // float pm25, float pm10
             //Temperature and Humidity ROW 1
             lcd.clear();
             lcd.setCursor(0,0);
@@ -616,7 +584,9 @@ void lcdShow(float temp, float humidity, float pressure,
             lcd.setCursor(0,1);
             lcd.print("PRESS=" + String(pressure) + "Pa");
             // lcd.setCursor(0,1); // We'll choode particulate matter over pressure in final design
-            // lcd.print("PM2.5=" + String(PM25));
+            // lcd.print("PM2.5=" + String(pm25));
+            // lcd.setCursor(14,1);
+            // lcd.print("PM10=" + String(pm10));
 
             //UV INDEX and CO ROW 3
             lcd.setCursor(0,2);
