@@ -2,11 +2,10 @@
 #include <Wire.h>
 //
 
-//1. Temperature, Humidity Sensor declaration
-#include "DHT.h"
-#define Type DHT22
-#define sensePin 25 // This pin is 02 on the UNO
-DHT HT(sensePin, Type);
+
+// 1. Declaration for the ATH20 sensor
+#include <AHT20.h>
+AHT20 aht20;
 
 //2. SD Card declarations
 #include "FS.h"
@@ -51,11 +50,7 @@ String timeStamp;
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
 
 
-// 9. Declaration for the ATH20 sensor
-// #include <AHT20.h>
-// AHT20 aht20;
-
-// 10. For the remote control
+// 9. For the remote control
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
 #include <IRutils.h>
@@ -75,6 +70,10 @@ void(* resetSystem) (void) = 0;  // declare reset fuction at address 0
 #define BLYNK_AUTH_TOKEN "wBf8uX4y4awvU1pjCHbFcWLagdsaoXwR"
 //BlynkTimer timer;
 int displayBtn;
+int wifiBtn;
+int restartBtn;
+int recalibBtn;
+
 
 BLYNK_WRITE(V9){
   displayBtn = param.asInt(); // assigning incoming value from pin V1 to a variable
@@ -88,6 +87,45 @@ BLYNK_WRITE(V9){
     lcd.backlight();
   }
 }
+
+//Recalibrating sensors
+BLYNK_WRITE(V10){
+  recalibBtn = param.asInt(); // assigning incoming value from pin V11 to a variable
+  
+  // To turn on and off the lcd display
+  if(recalibBtn == 1){
+    beepAlert();
+    initSD(); //SD card initializer
+    initBmp(); // Pressure sensor initializer
+    initAth20(); // ATH20 sensor initializer
+    initGasSensor(); // Gas sensor initializer
+     
+  }
+}
+
+//Refreshing the wifi, maybe change network
+BLYNK_WRITE(V11){
+  wifiBtn = param.asInt(); // assigning incoming value from pin V11 to a variable
+  
+  // To turn on and off the lcd display
+  if(wifiBtn == 1){
+    beepAlert();
+    initWireless(); // Reinitializes the WiFi
+  }
+}
+
+//Restarting the program from blynk
+BLYNK_WRITE(V12){
+  restartBtn = param.asInt(); // assigning incoming value from pin V11 to a variable
+  
+  // To turn on and off the lcd display
+  if(restartBtn == 1){
+    beepAlert();
+    resetSystem();
+  }
+}
+
+
 
 //Metro Class for timing and synchronization
 #include <Metro.h>
@@ -165,22 +203,23 @@ void setup(){
     lcd.begin(); // Lcd display initializer
     //introLcd(); // Lcd Intro messages
     
-    initMsg();
+    sensorMsg("INITIALIZING SENSORS", "PLEASE WAIT...");
     //Blynk.begin(BLYNK_AUTH_TOKEN);
     delay(1500);
     irrecv.enableIRIn();  // Start the receiver
     initRtc(); //Initializing the rtc
-    HT.begin(); //DHT initializer
     initSD(); //SD card initializer
     initBmp(); // Pressure sensor initializer
-    // initAth20(); // ATH20 sensor initializer
+    initAth20(); // ATH20 sensor initializer
+    pinMode(gasPin, INPUT);
     initGasSensor(); // Gas sensor initializer
     //delay(10000);
     initWireless(); //Initializes the Wifi
     pinMode(uvPin, INPUT); // Activating the uv pin mode
     pinMode(alertPin, OUTPUT); // Activating the alert pin
     
-    endMsg();
+    
+    sensorMsg("INITIALIZATION DONE!", "PROGRAM STARTING...");
     alert(alertPin, 5, 400);
 
     lcd.clear();
@@ -202,8 +241,8 @@ void loop(){
   timeStamp = dataTime();
 
   //Temperature and humidity readings
-  temp = bmp.readTemperature(); // Takes readings in Celcius (C)
-  humidity = HT.readHumidity(); // Readings are in percentage (%)
+  temp = aht20.getTemperature(); // Takes readings in Celcius (C)
+  humidity = aht20.getHumidity(); // Readings are in percentage (%)
   
   //Pressure and Altitude readings
   pressure = bmp.readPressure(); //Takes readings in Pascal (Pa)
@@ -268,6 +307,9 @@ void initWireless(){
   // attempt to connect to Wifi network:
   sensorMsg("CONNECTING TO WIFI", "PLEASE WAIT...");
   WiFiManager wm;
+  wm.setClass("invert");          // enable "dark mode" for the config portal
+  wm.setConfigPortalTimeout(120); // auto close configportal after n seconds
+  wm.setAPClientCheck(true);      // avoid timeout if client connected to softap
 
   bool res;
     // res = wm.autoConnect(); // auto generated AP name from chipid
@@ -299,32 +341,6 @@ void initWireless(){
 }
 
 
-
-//Message when sensors and other components are initializing
-void initMsg(){
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZING SENSORS");
-  lcd.setCursor(0,2);
-  lcd.print("PLEASE WAIT...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
-}
-
-//Message when sensors and other components have been initialized
-void endMsg(){
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("--------------------");
-  lcd.setCursor(0,1);
-  lcd.print("INITIALIZATION DONE!");
-  lcd.setCursor(0,2);
-  lcd.print("PROGRAM STARTING...");
-  lcd.setCursor(0,3);
-  lcd.print("--------------------");
-}
 
 //Displays the active message
 void activeMsg(){
@@ -405,11 +421,10 @@ void remoteCheck(){
      else if (cmd.value == 0xFF52AD){ // 9 on the remote  
       beepAlert();
       // Reinitializes sensors and other components
-      HT.begin(); //DHT initializer
       initSD(); //SD card initializer
       initBmp(); // Pressure sensor initializer
       initGasSensor(); // Gas sensor initializer
-      // initAth20(); // ATH20 sensor initializer
+      initAth20(); // ATH20 sensor initializer
     }
     else if (cmd.value == 0xFF42BD){ // 7 on the remote 
       beepAlert();
@@ -508,7 +523,7 @@ void initBmp(){
  
   sensorMsg("CALIBRATING", "PRESSURE SENSOR..."); //Lcd initialization message
 
-  bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
+  bmp.begin(BMP280_ADDRESS, BMP280_CHIPID);
 
   bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                   Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
@@ -592,22 +607,22 @@ void initRtc(){
 }
 
 
-// 5. Initializing the ATH20 sensor
-// void initAth20(){
-//   //Check if the AHT20 will acknowledge
+//5. Initializing the ATH20 sensor
+void initAth20(){
+  //Check if the AHT20 will acknowledge
 
-//   // sensorMsg("INITIALIZATION", "AHT 20 Sensor...");  //Lcd initialization message
+  sensorMsg("INITIALIZATION", "AHT 20 Sensor...");  //Lcd initialization message
 
-//   if (aht20.begin() == false)
-//   {
-//     Serial.println("AHT20 not detected. Please check wiring. Freezing.");
-//     while (1);
-//   }
-//   Serial.println("AHT20 acknowledged.");
+  if (aht20.begin() == false)
+  {
+    Serial.println("AHT20 not detected. Please check wiring. Freezing.");
+    while (1);
+  }
+  Serial.println("AHT20 acknowledged.");
 
-//   delay(850)
-//   lcd.clear();
-// }
+  delay(850);
+  lcd.clear();
+}
 
 
 //LCD welcome intro messages 
