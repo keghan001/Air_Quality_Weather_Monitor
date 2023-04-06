@@ -479,12 +479,15 @@ void remoteCheck(){
       // Reinitializes sensors and other components
       initSD(); //SD card initializer
       initBmp(); // Pressure sensor initializer
-      initGasSensor(); // Gas sensor initializer
       initAth20(); // ATH20 sensor initializer
     }
     else if (cmd.value == 0xFF42BD){ // 7 on the remote 
       beepAlert();
       initWireless(); // Reinitializes the WiFi
+    }
+    else if (cmd.value == 0xFF4AB5){ // 7 on the remote 
+      beepAlert();
+      initGasSensor(); // Gas sensor initializer
     }
 
     
@@ -796,7 +799,7 @@ void lcdShow(float temp, float humidity, float pressure, float CO, float CO2,
               lcd.setCursor(19,1);
               lcd.print("N");
             }
-            
+
             //delay(550);
             // lcd.clear();
 
