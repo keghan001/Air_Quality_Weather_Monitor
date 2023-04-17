@@ -76,6 +76,7 @@ void(* resetSystem) (void) = 0;  // declare reset fuction at address 0
 Metro taskLcdShow = Metro(100); // For the Lcd display of results
 Metro taskWriteSD = Metro(15000); // For writing to SD card
 Metro  taskRemoteRec = Metro(100); // For the remote control
+Metro  taskCleanScreen = Metro(120000); // Refreshes lcd panel every 2min
 
 
 //Handling the readings results
@@ -218,6 +219,12 @@ void loop(){
   //Using Metro to append file to SD card
   if(taskWriteSD.check()){
     appendFile(SD, "/datalog.csv", sensorCharV);
+    lcd.clear();
+  }
+
+  //Refreshes lcd display panel
+  if(taskCleanScreen.check()){
+    lcd.clear(); // To clear the lcd screen
   }
 
   //Writing to lcd
@@ -444,7 +451,7 @@ void initGasSensor(){
     if(calcR0 == 0){Serial.println("Warning: Conection issue found, (Analog pin shorts to ground)"); while(1);}
 
     //delay(10000);
-    for(int i=20; i>0; i--){
+    for(int i=30; i>0; i--){
       sensorMsg("INITIALIZATION", "GAS SENSOR... " + String(i) + "s");
       delay(1000);
     }
@@ -504,55 +511,12 @@ void initAth20(){
 }
 
 
-//LCD welcome intro messages 
-void introLcd(){
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("AIR QUALITY MONITOR");
-  lcd.setCursor(0,1);
-  lcd.print("PHYSICS DEPARTMENT");
-  lcd.setCursor(0,2);
-  lcd.print("KNUST, KUMASI CAMPUS");
-  lcd.setCursor(0,3);
-  lcd.print("Prototype: Mac 1");
-
-  delay(6000);
-  lcd.clear();
-
-
-  lcd.setCursor(0,0);
-  lcd.print("----- STUDENTS -----");
-  delay(850);
-  lcd.setCursor(0,1);
-  lcd.print("KWESI MANU EGHAN");
-  lcd.setCursor(0,2);
-  delay(1000);
-  lcd.print("AGYEI KWAKU DARKO");
-  lcd.setCursor(0,3);
-  delay(1000);
-  lcd.print("EMMANUEL OPOKU");
-  delay(3000);
-  lcd.clear();
-
-
-  lcd.setCursor(0,0);
-  lcd.print("--- SUPERVISORS ----");
-  delay(850);
-  lcd.setCursor(0,1);
-  lcd.print("PROF. F. K AMPONG");
-  lcd.setCursor(0,2);
-  delay(1000);
-  lcd.print("DR. J.N.A ARYEE");
-  delay(6500);
-  lcd.clear();
-}
-
 
 //Displaying sensor values on the 20x40 lcd display
 void lcdShow(float temp, float humidity, float pressure, float CO, float CO2, 
               float pm1, float pm25, float pm10, float altitude) {
             //Temperature and Humidity ROW 1
-            lcd.clear();
+            
             lcd.setCursor(0,0);
             lcd.print("TMP=" + String(temp) +"C");
             lcd.setCursor(11,0);
